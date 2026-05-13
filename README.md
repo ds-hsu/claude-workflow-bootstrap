@@ -17,10 +17,11 @@
 7. [日常工作流：用產品 wiki 做事](#日常工作流用產品-wiki-做事)
 8. [進階：Coverage State 與 Gap Lifecycle](#進階coverage-state-與-gap-lifecycle)
 9. [本 Repo 結構](#本-repo-結構)
-10. [兩層 skill 結構](#兩層-skill-結構)
-11. [設計理念](#設計理念)
-12. [疑難排解](#疑難排解)
-13. [授權](#授權)
+10. [產出的產品 wiki 結構](#產出的產品-wiki-結構)
+11. [兩層 skill 結構](#兩層-skill-結構)
+12. [設計理念](#設計理念)
+13. [疑難排解](#疑難排解)
+14. [授權](#授權)
 
 ---
 
@@ -334,6 +335,101 @@ claude-workflow-bootstrap/
     ├── isms/
     └── diagrams/
 ```
+
+---
+
+## 產出的產品 wiki 結構
+
+跑 `/init-product-wiki` 後，目標路徑會長這樣（以 `MyApp` 為產品代號為例）：
+
+### 初始狀態（剛建立完）
+
+```
+MyApp-wiki/
+├── CLAUDE.md                          # wiki schema、ingest@v4、query@v2、Coverage/Gap 規範
+├── README.md                          # 產品 wiki 入口文件（含 {{PRODUCT_DISPLAY_NAME}})
+├── .git/                              # git init 完成（main 分支）
+├── .claude/
+│   └── skills/                        # 4 個起手 skill（從 bootstrap 複製）
+│       ├── ingest/
+│       ├── ingest-isms/
+│       ├── wiki-query/
+│       └── spec-by-example/
+├── raw/                               # 第 1 層：原始資料（事實來源，唯一可變寫入點）
+│   ├── drawio/                        # /ingest-drawio 產出的 Mermaid markdown
+│   ├── isms/                          # ISMS 變更案資料夾（每案一個子目錄）
+│   └── coverage-gaps/                 # Gap 唯一事實來源
+│       └── gap-source-spec.md         # 規格說明（learners 必讀）
+├── wiki/                              # 第 2 層：LLM 維護的結構化知識（編譯產物）
+│   ├── index.md                       # 知識庫目錄（按類別組織）
+│   ├── log.md                         # /ingest 處理日誌（append-only）
+│   ├── _templates/                    # 六種頁面模板（給 /ingest 套用）
+│   │   ├── concept.md
+│   │   ├── entity.md
+│   │   ├── procedure.md
+│   │   ├── system.md
+│   │   ├── tech-note.md
+│   │   └── troubleshooting.md
+│   ├── coverage/                      # 機器層知識覆蓋地圖
+│   │   ├── coverage-state-spec.md     # 規格說明
+│   │   └── topics/                    # 每個主題一個 .md 檔（metadata + pointer）
+│   ├── concepts/                      # 概念頁（CICD、OLTP、TLS…）
+│   ├── entities/                      # 實體頁（資料表、API、主機）
+│   ├── procedures/                    # 操作流程
+│   ├── systems/                       # 系統頁
+│   ├── tech-notes/                    # 技術筆記
+│   └── troubleshooting/               # 故障排除
+└── specs/
+    └── sbe/                           # /spec-by-example 產出的 BDD 規格
+```
+
+### 演化後狀態（跑過幾次 /ingest、/wiki-query 之後）
+
+```
+MyApp-wiki/
+├── ...
+├── raw/
+│   ├── <your-architecture>/           # 你自己投放的架構快照（ARCHITECTURE.md 等）
+│   ├── <your-notes>/                  # 你自己投放的維運筆記
+│   ├── daily/                         # /daily-log 自動產出
+│   │   └── {username}/{yyyyMMdd}.md
+│   ├── drawio/                        # /ingest-drawio 產出
+│   │   └── {project}/
+│   │       ├── README.md
+│   │       └── {page}.md              # Mermaid 視覺化 markdown
+│   ├── isms/                          # /ingest-isms 產出
+│   │   └── {ISMS-XXX-變更主題}/
+│   │       ├── 申請單.md               # 結構化變更單
+│   │       ├── {ISMS-XXX-變更主題}-分析.md   # 含 ## 知識盲點 段（gap-candidate）
+│   │       └── {ISMS-XXX-變更主題}-測試規格.md  # spec-by-example 產出
+│   └── coverage-gaps/                 # /wiki-query 與 /ingest 寫入的 gap entry
+│       ├── gap-source-spec.md
+│       ├── {topic-id-1}.md            # 對應 wiki/coverage/topics/{topic-id-1}.md
+│       └── {topic-id-2}.md
+├── wiki/
+│   ├── log.md                         # 每次 /ingest 都會 append 一筆
+│   ├── coverage/topics/
+│   │   ├── {topic-id-1}.md            # frontmatter（coverage level、wiki_pages）+ 已覆蓋面向 + pointer
+│   │   └── {topic-id-2}.md
+│   ├── systems/
+│   │   ├── {Product1}.md              # /ingest 從 raw 編譯出來
+│   │   └── {ExampleSystemA}.md
+│   ├── procedures/
+│   │   └── {某 SOP}.md
+│   └── ...
+└── specs/sbe/
+    └── 2026-05-13-紅利點數折抵.md      # /spec-by-example 產出
+```
+
+### 三層架構回顧
+
+| 層 | 位置 | 角色 | 寫入規則 |
+|---|---|---|---|
+| **第 1 層：Raw** | `raw/` | 事實來源（不可變快照）| 你/`/ingest-isms`/`/ingest-drawio`/`/wiki-query`/`/daily-log` 可寫；**寫了不再修改** |
+| **第 2 層：Wiki** | `wiki/` | LLM 維護的編譯產物 | **唯一寫入入口是 `/ingest`**；其他 skill 禁止直接寫 wiki/ |
+| **第 3 層：Schema** | `CLAUDE.md` + spec 檔 | 結構與品質規範 | 由你或 maintainer 手動演化 |
+
+衝突時以 raw 為準。wiki 是 raw 經 ingest@v4 prompt 規範編譯後的產物，可隨時刪掉重編。
 
 ---
 
