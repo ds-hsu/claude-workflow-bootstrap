@@ -1,0 +1,16 @@
+# 使用者本機執行產物
+demo-wiki/
+*.local.ps1
+*.local.json
+
+# 作業系統
+Thumbs.db
+.DS_Store
+
+# 編輯器
+.vscode/
+.idea/
+*.swp
+
+# PowerShell 暫存
+*.tmp

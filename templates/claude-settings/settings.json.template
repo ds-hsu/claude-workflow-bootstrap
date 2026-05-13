@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(rm -r:*)",
+      "Bash(rmdir:*)",
+      "Bash(del /s:*)",
+      "Bash(format:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git clean -f:*)"
+    ],
+    "ask": [
+      "Bash(rm:*)",
+      "Bash(del:*)",
+      "Bash(git checkout --:*)",
+      "Bash(git restore:*)",
+      "Bash(git stash drop:*)",
+      "Bash(git branch -D:*)",
+      "Bash(docker rm:*)",
+      "Bash(docker rmi:*)"
+    ]
+  }
+}
