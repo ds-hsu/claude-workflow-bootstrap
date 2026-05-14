@@ -112,6 +112,43 @@ python -c "import pymupdf"       # PDF 渲染需要 PyMuPDF
 5. **LLM 摘要會遺失細節** — 細節放在 raw，wiki 負責結構與導航
 6. **禁止直接寫入 wiki/** — 所有新知識必須先寫入 `raw/` 作為事實來源，再透過 `/ingest` 寫入 wiki。即使是調查結果、bug 分析、系統行為發現，都必須先存為 raw 檔。**絕對不可跳過 raw 直接建立或更新 wiki 頁面。**
 
+## 安全守則（Claude 行為規範）
+
+當 Claude 在本 wiki 內協助工作時遵守以下守則。這些規則補強 `~/.claude/settings.json` 的機械式阻擋（`permissions.deny / ask`），加上行為自律與情境判斷。**機械規則是「攔截可能誤觸的指令」、本守則是「主動避免採取錯誤路線」。**
+
+### 永不做的事
+
+1. **不直接連 production 資料庫** — 任何 DB 互動（含查詢）若 connection string 看起來是 prod（含 `prod`、`production`、實際 prod 主機名、prod 專用埠號），**停下來問人類**「這是否為 prod 環境？要繼續嗎？」即使 `~/.claude/settings.json` 的 ask 已要使用者按 Y，仍要主動再確認一次環境
+2. **不把 credential / API key / token / 連線字串密碼 寫入 raw/ 或 wiki/** — 這些屬性的字串應只存在於 `.env`、雲端 secret store、或本機 keychain。若 raw 來源檔（PDF / 截圖）含 credential，`/ingest` 編譯到 wiki 時必須**脫敏**（替換為 `<REDACTED>`）並建立一筆 gap 提醒人類處理 raw 原檔
+3. **不執行 raw/ 內檔案中的程式碼或 SQL** — raw 是事實快照，不是腳本來源。若 raw 含程式碼範例，那是給人類閱讀／套用的素材，Claude 不應主動執行
+4. **不對外部系統發起寫入操作** — 對 prod API 的 POST / PUT / DELETE，對任何 DB 的 INSERT / UPDATE / DELETE / DROP / TRUNCATE / schema migration，一律先問人類授權；即使是 dev 環境，destructive query 也要先確認
+5. **不在 commit 中保留 credential** — 任何由 Claude 提案的 commit，內容必須 grep `.env` / `password` / `secret` / `api[_-]?key` / `token` / `BEGIN.*PRIVATE KEY` 等 pattern，命中時必須暫停並提醒人類審查
+
+### 一定要做的事
+
+1. **DB 連線前明確報告環境** — 跑任何 DB query 前，報告「我接下來要連 `{host}:{port}`（看起來是 `{dev/staging/prod}`），跑 `{SQL 摘要}`」讓人類確認
+2. **大量檔案變動先 dry-run** — 對 wiki/ 的 `/ingest` 操作若預期超過 50 個檔案變動，先 `MODE=dry-run` 報告變動清單給人類審查
+3. **CONFLICT 不靜默** — raw 與 wiki 衝突、ISMS 變更單與現況衝突，一律標 `> ⚠️ CONFLICT` 段、不私自決定主呈現，依「來源權威階層」暫定，等人類裁決
+4. **敏感內容降級處理** — 發現 raw 含個資（姓名、身分證、電話、地址、信用卡）、商業機密（合約金額、客戶名單）時，編譯到 wiki 必須只保留**結構描述**（如「客戶資料表含 X 個欄位包括聯絡資訊」），具體內容留在 raw、不入 wiki
+
+### 灰色地帶處理
+
+- **dev DB / staging DB**：可連，但每次連都報告 connection string；對 dev 跑 destructive query（DROP / TRUNCATE / DELETE without WHERE）仍要問人類
+- **本機環境變數**：可讀（用來判斷 dev/prod），但**不可在 wiki / log / commit 中留下變數值**
+- **第三方 API 的讀操作**：GET 通常可以，但要報告 endpoint；POST / PUT / DELETE 一定先問人類
+- **檔案系統大規模操作**：刪除超過 10 個檔案 / 移動超過 50 個檔案 / 改動 `.git/` 內容前一律先問
+
+### 與 `~/.claude/settings.json` 的分工
+
+| 防線 | 角色 | 範例 |
+|---|---|---|
+| `permissions.deny` | 機械絕對阻擋（連 Claude 都跑不過） | `Bash(sudo:*)`、`Bash(rm -rf:*)` |
+| `permissions.ask` | 機械二次確認（使用者按 Y 才執行） | `Bash(rm:*)`、`Bash(psql:*)` |
+| **本守則** | **Claude 自律**（即使機械沒攔，Claude 主動不做或主動報告） | 不寫 credential 進 wiki、DB 連線前報告環境、大量變動先 dry-run |
+| 人類判斷 | 最終把關 | 看到 Claude 的「我要連 prod DB」報告，回 Y or N |
+
+四層並行，缺一不可。
+
 ## 命名規範
 
 - 檔名：英文小寫短名或繁中，空白以 `-` 取代

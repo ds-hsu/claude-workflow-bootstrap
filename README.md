@@ -16,12 +16,13 @@
 6. [Step 4（選擇性）— 跑電商範例 walkthrough](#step-4選擇性--跑電商範例-walkthrough)
 7. [日常工作流：用產品 wiki 做事](#日常工作流用產品-wiki-做事)
 8. [進階：Coverage State 與 Gap Lifecycle](#進階coverage-state-與-gap-lifecycle)
-9. [本 Repo 結構](#本-repo-結構)
-10. [產出的產品 wiki 結構](#產出的產品-wiki-結構)
-11. [兩層 skill 結構](#兩層-skill-結構)
-12. [設計理念](#設計理念)
-13. [疑難排解](#疑難排解)
-14. [授權](#授權)
+9. [安全注意事項與護欄](#安全注意事項與護欄)
+10. [本 Repo 結構](#本-repo-結構)
+11. [產出的產品 wiki 結構](#產出的產品-wiki-結構)
+12. [兩層 skill 結構](#兩層-skill-結構)
+13. [設計理念](#設計理念)
+14. [疑難排解](#疑難排解)
+15. [授權](#授權)
 
 ---
 
@@ -299,6 +300,93 @@ open → resolved_pending → resolved → closed
 - `CLAUDE.md` → 「Coverage State 與 Gap Lifecycle」章節
 - `wiki/coverage/coverage-state-spec.md` → wiki 端 metadata 規格
 - `raw/coverage-gaps/gap-source-spec.md` → gap 事實來源規格
+
+---
+
+## 安全注意事項與護欄
+
+AI 協作的便利伴隨幾類常見風險：誤刪檔案、不慎連 production、credential 進版控、unintended 部署。本套件設計時已透過**三層防線**限縮風險，但最終仍依賴你的判斷。
+
+### 第 1 層：`~/.claude/settings.json` 機械式阻擋
+
+`/setup-claude` 會把以下規則 merge 進你的個人設定（完整清單見 `templates/claude-settings/settings.json.template`）：
+
+**`permissions.deny`（直接拒絕，連問都不問）— 17 條**
+
+| 類別 | 規則 |
+|---|---|
+| 破壞性檔案操作 | `rm -rf` / `rm -r` / `rmdir` / `del /s` / `format` / `dd` / `mkfs` |
+| 權限災難 | `chmod -R 777` |
+| 權限升級 | `sudo` |
+| Git 災難 | `git push --force` / `git push -f` / `git reset --hard` / `git clean -f` |
+| 雲端／容器破壞 | `kubectl delete` / `docker volume rm` / `docker system prune` |
+| 意外發布 | `npm publish` |
+
+**`permissions.ask`（每次要二次確認）— 17 條**
+
+| 類別 | 規則 | 為何攔截 |
+|---|---|---|
+| 一般刪除 | `rm` / `del` | 給你看一眼路徑 |
+| Git 復原 | `git checkout --` / `git restore` / `git stash drop` / `git branch -D` | 可能丟未 commit 的變更 |
+| 容器／K8s | `docker rm` / `docker rmi` / `docker exec` / `kubectl apply` / `kubectl exec` | exec 進入別人環境前停一下 |
+| 全域安裝 | `npm install -g` | 影響全機器 |
+| **DB CLI 連線** | `psql` / `mysql` / `sqlcmd` / `mongo` / `mongosh` / `redis-cli` | **每次連 DB 都被攔，逼你想「這 connection string 連到哪？」** |
+
+> **關於 DB CLI 攔截**：你會發現在 dev 環境也要按 Y。這是刻意的——把「連 DB」這件事拉到意識前緣，避免把 `psql -h prod-...` 跟 `psql -h localhost` 當作同類動作。如果太煩，學完一陣子後可從你個人 `~/.claude/settings.json` 移除這幾條。
+
+### 第 2 層：CLAUDE.md 行為規範
+
+產品 wiki 的 `CLAUDE.md` 內含「安全守則」章節（由 `/init-product-wiki` 一併建立），明定 Claude 在 wiki workflow 中**不會**做的事：
+
+- 直接連 production 資料庫或讀取 prod credentials
+- 把含 credential / API key 的內容寫入 `raw/` 或 `wiki/`
+- 執行 raw/ 內檔案中的程式碼或 SQL
+- 在沒有人類授權下對外部系統發起寫入（POST / PUT / DELETE / DROP / TRUNCATE / INSERT）
+
+完整守則見產品 wiki 的 `CLAUDE.md` →「安全守則」段。
+
+### 第 3 層：人類判斷（不可省略）
+
+機械規則與 AI 行為規範都是**降低**事故機率，不是**消滅**。你仍然要：
+
+- **永遠不把 prod credential 交給 AI** — dev / staging credentials 在隔離環境內 OK；prod credentials 連「ask 二次確認」都不要倚賴，因為人會疲累、會誤按 Y
+- **AI 跑 DB query 前先看 connection string** — `psql -h db-prod...` 跟 `psql -h localhost` 風險天差地別
+- **schema migration / DROP / TRUNCATE 先在 dev 跑過** — 不論信不信 AI，這是基本 SOP
+- **commit 前 grep credential** — `.env`、`*.pem`、`config/secrets.yml` 等加進 `.gitignore`；commit 前用 `git diff --cached` 掃一眼
+
+### 想再嚴一點？
+
+`~/.claude/settings.json` 是你個人檔，可以**在 bootstrap 規則之上**再加自家規則。例如：
+
+```jsonc
+{
+  "permissions": {
+    "deny": [
+      // 完全禁止 prod 主機 SSH（pattern 視你公司命名）
+      "Bash(ssh *prod*:*)",
+      "Bash(ssh *.production.*:*)",
+
+      // 完全禁止連 prod DB（搭配第 2 層 CLAUDE.md 雙重防線）
+      "Bash(psql -h *prod*:*)",
+      "Bash(mysql -h *prod*:*)",
+
+      // 鎖住特定路徑不准動
+      "Bash(rm * /critical/path/*:*)"
+    ]
+  }
+}
+```
+
+修改後**不需要重跑 `/setup-claude`**——直接改 `~/.claude/settings.json`，下次開 Claude Code 就生效。
+
+### 萬一還是出事了
+
+| 情境 | 處理 |
+|---|---|
+| 誤刪檔案 | 先看 `git status`；若已 commit 用 `git checkout HEAD~1 -- <path>`；若連 git 都沒進去就靠 OS recycle bin |
+| 誤連 prod 並執行寫入 | 立刻 Ctrl+C；通知 DBA 看 audit log；評估資料是否需要 rollback |
+| credential 進 git history | **先 rotate credential**（第一優先，因為已外洩）；再用 `git filter-repo` 或 BFG Repo-Cleaner 從歷史移除；force push 前確認沒人 fork |
+| `/ingest` 把敏感內容寫進 wiki | 從 `raw/` 移除來源 + 從 wiki 對應頁面手動移除 + 下次 `/ingest` 不會再寫入；若已 commit，同上 credential 流程 |
 
 ---
 
