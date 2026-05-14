@@ -141,8 +141,8 @@ claude
 
 1. **備份**你既有的 `~/.claude/settings.json`（如果有的話），命名為 `settings.json.bak.{timestamp}`
 2. 把團隊共用範本 `templates/claude-settings/settings.json.template` deep merge 進你的設定。**目前範本最小化，只含核心安全規則**：
-   - `permissions.deny`：9 條破壞性指令黑名單（rm -rf、force push、reset --hard…）
-   - `permissions.ask`：8 條須二次確認指令（rm、git checkout --、docker rm…）
+   - `permissions.deny`：**17 條**破壞性指令黑名單（rm -rf、sudo、force push、reset --hard、kubectl delete、docker volume rm、npm publish…）
+   - `permissions.ask`：**17 條**須二次確認指令（rm、git checkout --、docker exec、kubectl apply、npm install -g、psql / mysql / mongo / redis-cli 等 DB CLI…）
 3. **保留你原有的設定**——只補缺漏 key，不覆寫你已設的值；陣列取聯集去重
 4. 列出所有變動讓你過目
 
