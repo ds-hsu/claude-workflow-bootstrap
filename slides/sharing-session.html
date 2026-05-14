@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Workflow Bootstrap — Sharing Session</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4/dist/theme/black.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4/plugin/highlight/monokai.css">
+  <style>
+    .reveal { font-family: 'Segoe UI', 'Microsoft JhengHei', 'PingFang TC', sans-serif; }
+    /* 全域邊距：避免內容貼邊 */
+    .reveal .slides > section { padding: 10px 24px !important; box-sizing: border-box; }
+    .reveal .slides > section > section { padding: 10px 24px !important; box-sizing: border-box; }
+    .reveal section h1 { color: #ffaa55; }
+    .reveal section h2 { color: #ffaa55; }
+    .reveal section h3 { color: #88ddff; margin-bottom: 0.4em; }
+    .reveal section p { margin: 0.3em 0; }
+    .reveal section ul { margin: 0.3em 0; }
+    .reveal section ul li { margin: 0.1em 0; }
+    .reveal code { font-family: 'Consolas', 'Menlo', monospace; background: #2a2a2a; padding: 1px 6px; border-radius: 3px; word-break: break-word; }
+    .reveal pre { box-shadow: none; max-width: 100%; }
+    .reveal pre code {
+      font-size: 0.5em;
+      line-height: 1.35;
+      padding: 0.8em 1em;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
+    .reveal table { font-size: 0.65em; margin: 0.3em auto; }
+    .reveal table th, .reveal table td { text-align: left; vertical-align: top; padding: 4px 10px; }
+    .reveal .lead { text-align: center; }
+    .reveal .lead h1 { font-size: 2.2em; }
+    .reveal .highlight { color: #ffaa55; font-weight: bold; }
+    .reveal .muted { opacity: 0.6; font-size: 0.75em; }
+    .reveal .big-quote { font-size: 1.4em; line-height: 1.5; margin: 1em 0; }
+    .reveal .ascii { font-family: 'Consolas', monospace; font-size: 0.42em; line-height: 1.2; text-align: left; background: #1a1a1a; padding: 0.8em 1em; border-radius: 4px; white-space: pre; overflow-x: auto; }
+    .reveal .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2em; text-align: left; }
+    .reveal .two-col h4 { margin: 0.2em 0; font-size: 0.85em; }
+    .reveal .two-col ul { font-size: 0.65em; margin: 0.2em 0; padding-left: 1.2em; }
+    .reveal .tag { background: #444; padding: 2px 8px; border-radius: 4px; font-size: 0.5em; vertical-align: middle; margin-left: 0.4em; }
+    .reveal .tag-bonus { background: #5a3a8a; }
+    .reveal .tag-warn { background: #aa4444; }
+    .reveal ul { text-align: left; }
+    .reveal section.section-divider { text-align: center; }
+    .reveal section.section-divider h1 { font-size: 3em; opacity: 0.9; }
+    .reveal section.section-divider p { font-size: 0.7em; opacity: 0.6; font-style: italic; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ========== 1. Title ========== -->
+<section class="lead">
+  <h1>Claude Workflow Bootstrap</h1>
+  <h3>用 AI 對話建立團隊知識工作流</h3>
+  <p class="muted" style="margin-top: 2em;">分享人：許毓安 / ds-hsu</p>
+  <p class="muted">github.com/ds-hsu/claude-workflow-bootstrap</p>
+  <aside class="notes">
+    開場 30 秒。今天分享一個我整理出來的 bootstrap，目的是讓團隊新人能用最少步驟跟 Claude 一起工作。
+  </aside>
+</section>
+
+<!-- ========== 2. Pain ========== -->
+<section>
+  <h2>我們遇過的痛</h2>
+  <ul>
+    <li>新人裝環境痛苦（裝 Git → Node → SDK → IDE → ... 一小時起跳）</li>
+    <li>腳本破在 Mac（PowerShell only，Mac 同仁怎麼辦？）</li>
+    <li>文件總是過時（人類沒時間維護 wiki）</li>
+    <li>credentials 不小心進 commit</li>
+    <li>AI 工具用了一陣子，<span class="highlight">還是不知道它的能耐</span></li>
+  </ul>
+  <aside class="notes">
+    跟現場有共鳴後再進解法。讓他們點頭：「對對對，這就是我的問題」。
+  </aside>
+</section>
+
+<!-- ========== 3. The Pivot ========== -->
+<section class="lead">
+  <h2>解法</h2>
+  <p class="big-quote">
+    裝<span class="highlight">兩個工具</span>之後，<br>
+    其餘<span class="highlight">跟 AI 對話</span>就好。
+  </p>
+  <p class="muted">不是「AI 幫你寫 code」、是「AI 是工作流的一部分」</p>
+  <aside class="notes">
+    這是整場的核心觀念。從「跑腳本」轉成「跟 AI 講話」。
+  </aside>
+</section>
+
+<!-- ========== 4. Section: AI 的核心能力 ========== -->
+<section class="section-divider">
+  <h1>Part 1</h1>
+  <h2>AI 的核心能力</h2>
+  <p>—— 兩大基石（Agents + Tools）與五個你可能還沒體驗過的能力</p>
+</section>
+
+<!-- ========== 5. AI Foundation: Agents ========== -->
+<section>
+  <h3>基石 #1 — Agents（分身）</h3>
+  <p>傳統 AI 對話 = 你一句它一句、單線完成。</p>
+  <p>Claude 工作流 = <span class="highlight">你一句、它派一隊分身平行做事</span>。</p>
+  <table style="margin-top: 0.5em;">
+    <tr><th>內建 agent 類型</th><th>用途</th></tr>
+    <tr><td><code>Explore</code></td><td>讀檔搜尋 / 找 code（context 隔離、不污染主對話）</td></tr>
+    <tr><td><code>Plan</code></td><td>實作前先寫計畫、評估架構取捨</td></tr>
+    <tr><td><code>code-reviewer</code></td><td>獨立看 diff、給第二意見</td></tr>
+    <tr><td><code>feature-dev:code-explorer</code></td><td>分析既有功能、追執行路徑、map 架構</td></tr>
+    <tr><td><code>general-purpose</code></td><td>複雜多步驟任務、需要工具完整存取</td></tr>
+  </table>
+  <p class="muted">範例：「用 Explore 找出哪些檔案會被 /ingest 觸及」→ 子 agent 平行回報，主對話 context 乾淨。</p>
+  <aside class="notes">
+    強調：context 隔離很關鍵。讓你不必把長串搜尋結果塞進主對話。
+  </aside>
+</section>
+
+<!-- ========== 6. AI Foundation: Tools ========== -->
+<section>
+  <h3>基石 #2 — Tools（直接操作）</h3>
+  <p>Claude 不只是給建議讓你執行，<span class="highlight">它自己執行、自己驗證、自己迭代</span>：</p>
+  <div class="two-col">
+    <div>
+      <h4 style="color: #88ddff;">檔案系統</h4>
+      <ul style="font-size: 0.7em;">
+        <li><code>Read</code> / <code>Write</code> / <code>Edit</code></li>
+        <li><code>Glob</code>（找檔）/ <code>Grep</code>（找字串）</li>
+        <li><code>NotebookEdit</code>（Jupyter）</li>
+      </ul>
+      <h4 style="color: #88ddff;">執行</h4>
+      <ul style="font-size: 0.7em;">
+        <li><code>Bash</code>（任意指令、背景執行）</li>
+        <li><code>TaskCreate</code> / <code>TaskUpdate</code></li>
+      </ul>
+    </div>
+    <div>
+      <h4 style="color: #88ddff;">網路</h4>
+      <ul style="font-size: 0.7em;">
+        <li><code>WebFetch</code> / <code>WebSearch</code></li>
+      </ul>
+      <h4 style="color: #88ddff;">MCP 工具（外部整合）</h4>
+      <ul style="font-size: 0.7em;">
+        <li><code>Playwright</code>（瀏覽器自動化）</li>
+        <li><code>Firecrawl</code>（爬蟲）</li>
+        <li><code>Gmail / Calendar / Drive</code></li>
+        <li><code>claude-mem</code>（跨 session 記憶）</li>
+      </ul>
+    </div>
+  </div>
+  <p class="muted" style="text-align: center; margin-top: 0.5em;">Agents + Tools = Claude 能做事的兩大基石。下面 5 張 slide 是它們組合出來的具體表現。</p>
+  <aside class="notes">
+    這頁鋪墊「為什麼 Claude 跟 ChatGPT 體感差很多」。後續 capability slides 都是 agents + tools 的展示。
+  </aside>
+</section>
+
+<!-- ========== 7. AI Capability #1: Cross-platform ========== -->
+<section>
+  <h3>表現 #1 — 跨平台<span class="tag">Tools 應用</span></h3>
+  <p>傳統做法：</p>
+  <pre><code class="bash">
+# Windows
+.\scripts\setup.ps1
+
+# Mac
+./scripts/setup.sh
+
+# Linux
+./scripts/setup-linux.sh
+  </code></pre>
+  <p>AI 做法：</p>
+  <pre><code class="bash">
+你（Win 或 Mac，不重要）：
+  「幫我設定 ~/.claude/」
+
+Claude 自己判斷 OS、處理路徑、merge JSON
+  </code></pre>
+  <p class="muted">沒有雙寫成本。Claude 自己解決平台差異。</p>
+  <aside class="notes">
+    強調：以前我們維護 .ps1 + .sh 雙份腳本，每改一處改兩次。現在不用了。
+  </aside>
+</section>
+
+<!-- ========== 8. AI Capability #2: Document understanding ========== -->
+<section>
+  <h3>表現 #2 — 文件理解<span class="tag">Tools + Agents</span></h3>
+  <p>把一份 raw 文件（PDF / Word / drawio / md）丟進 <code>raw/</code></p>
+  <pre><code class="bash">
+你：「ingest 未處理的 raw」
+  </code></pre>
+  <p>Claude 做的事：</p>
+  <ul>
+    <li>讀文件、抽取系統 / 流程 / 實體 / 故障案例</li>
+    <li>更新 5-15 個相關 wiki 頁面（不只 1 個）</li>
+    <li>建立雙向 wikilink（避免孤立頁）</li>
+    <li>raw 與既有 wiki 衝突時標 ⚠️ CONFLICT、不私自決定</li>
+  </ul>
+  <p class="highlight">→ 「LLM 維護式知識庫」：文件不再過時，是因為 AI 不會疲倦</p>
+  <p class="muted">幕後：主 agent 讀 raw，可派 Explore agent 比對既有 wiki 找衝突，最後再用 Write/Edit 工具批次更新</p>
+  <aside class="notes">
+    這是專案的核心：Karpathy LLM Wiki 模式。AI 把「維護 wiki」這個傳統高成本工作變成幾乎零成本。Agents + Tools 都用上了。
+  </aside>
+</section>
+
+<!-- ========== 9. AI Capability #3: Gap detection ========== -->
+<section>
+  <h3>表現 #3 — 知識管理 / Gap 偵測<span class="tag">Tools</span></h3>
+  <p>你問：「ShopDemo 退款流程涉及哪些系統？」</p>
+  <p>Claude 沒查到答案時，<span class="highlight">不會靜默失敗</span>：</p>
+  <pre><code class="yaml">
+### gap-2026-05-13-001
+- aspect: ShopDemo 退款流程系統涉及範圍
+- status: open
+- severity: medium
+- created: 2026-05-13
+- query_text: "ShopDemo 退款流程涉及哪些系統？"
+- search_trail: [INDEX_LOOKUP:Procedures→miss,
+                 COVERAGE_LOOKUP:refund-flow→miss,
+                 RAW_FALLBACK:raw/.../退款.md→partial]
+- resolved_by: null
+  </code></pre>
+  <p>下次有人補了資料 → <code>/ingest</code> 自動切 <code>resolved_pending</code> → 下次查詢驗證可回答 → 切 <code>resolved</code></p>
+  <p class="highlight">→ 知識斷層自動追蹤、生命週期化</p>
+  <aside class="notes">
+    這個機制叫 Coverage State / Gap Lifecycle。設計重點：兩階段驗證——AI 不能自己關閉 gap，要靠下次實際查詢驗證。避免 AI 自己騙自己。
+  </aside>
+</section>
+
+<!-- ========== 10. AI Capability #4: Self-recovery ========== -->
+<section>
+  <h3>表現 #4 — 失敗自我復原<span class="tag">Tools</span></h3>
+  <p>傳統腳本失敗：</p>
+  <ul>
+    <li>看 stack trace</li>
+    <li>Google 錯誤訊息</li>
+    <li>改 script、再跑</li>
+    <li>跑到一半又掛...</li>
+  </ul>
+  <p>AI 工作流失敗：</p>
+  <pre><code class="bash">
+你：「剛剛 /init-product-wiki 跑到一半噴錯，
+     幫我看一下狀態」
+
+Claude：
+  - 用 Bash 工具掃目錄當前狀態
+  - 判斷是該回退、繼續、或重來
+  - 告訴你下一步怎麼做
+  </code></pre>
+  <aside class="notes">
+    很重要的能力。「跑壞了」變成可對話的問題，不是孤立 debug。
+  </aside>
+</section>
+
+<!-- ========== 11. AI Capability #5: Self-discipline ========== -->
+<section>
+  <h3>表現 #5 — 行為自律<span class="tag">兩者 + 護欄</span></h3>
+  <p>你不可能光靠運氣不出事。三層護欄 + AI 自律：</p>
+  <table>
+    <tr><th>層</th><th>機制</th><th>例</th></tr>
+    <tr><td>1. 機械 deny</td><td>絕對阻擋</td><td><code>sudo</code> / <code>rm -rf</code> / <code>git push --force</code></td></tr>
+    <tr><td>2. 機械 ask</td><td>二次確認</td><td><code>psql</code> / <code>docker exec</code> / <code>npm install -g</code></td></tr>
+    <tr><td>3. <span class="highlight">AI 自律</span></td><td>主動報告</td><td>「我接下來要連 <code>db-prod-...</code>（看起來是 prod），跑 SELECT ...，要繼續嗎？」</td></tr>
+    <tr><td>4. 人類把關</td><td>最終決策</td><td>你看到上面那句，回 Y or N</td></tr>
+  </table>
+  <p class="muted">每次連 DB 都被攔——刻意設計，把「連 DB」這件事拉到意識前緣。</p>
+  <aside class="notes">
+    強調：AI 自律是第三層、不是唯一層。每層都缺一不可。
+  </aside>
+</section>
+
+<!-- ========== 10. Section: 從零開始 ========== -->
+<section class="section-divider">
+  <h1>Part 2</h1>
+  <h2>從零開始</h2>
+  <p>—— 一杯咖啡時間從裝環境到跑出 BDD 規格</p>
+</section>
+
+<!-- ========== 11. Team Git workflow (BEFORE install) ========== -->
+<section>
+  <h3>動工前先記住：Git 約定<span class="tag">團隊及營運流程</span></h3>
+  <p>後續 Claude 會幫你 commit / push / 開 PR——但要符合團隊規範。先過目這幾條：</p>
+  <div class="two-col">
+    <div>
+      <h4 style="color: #88ddff;">Branch 規矩</h4>
+      <ul style="font-size: 0.7em;">
+        <li>永遠從 <code>main</code> 開分支</li>
+        <li>命名：<code>feature/{username}/{功能名}</code></li>
+        <li>例：<code>feature/ds-hsu/bankInfo</code></li>
+      </ul>
+    </div>
+    <div>
+      <h4 style="color: #88ddff;">Commit Message 格式</h4>
+      <pre style="font-size: 0.8em;"><code>&lt;type&gt;(&lt;scope&gt;): &lt;subject&gt; (#issue)</code></pre>
+      <ul style="font-size: 0.65em;">
+        <li>type：<code>feat</code> / <code>fix</code> / <code>docs</code> / <code>refactor</code> / <code>chore</code>…</li>
+        <li>subject ≤ 50 字、直述句、命令句</li>
+        <li>一個 commit 只做一件事</li>
+      </ul>
+    </div>
+  </div>
+  <p class="muted">範例：</p>
+  <pre><code class="bash">
+feat(對講機): 新增對講機部分授權功能 (#69437)
+fix(社區公告): 把 tinymce 改成本地檔案，修正錯誤提示 (#70853)
+refactor(手機驗證): 把手機驗證抽換成共用函式 (#87233)
+docs: 社區選擇元件新增註解
+  </code></pre>
+  <p class="muted">這些約定寫進團隊 <code>~/.claude/rules/team-rules.md</code>，<code>/setup-claude</code> 之後 Claude 跑 <code>/commit</code> 會自動套用。<span class="highlight">你只需要記得這格式存在、看 commit 訊息能驗 AI 對不對</span>。</p>
+  <aside class="notes">
+    強調順序：先講 git 約定，再裝工具。理由：之後 Claude 跑 /commit 就是依這格式產出，學員看得懂才能驗證 AI 對不對。
+  </aside>
+</section>
+
+<!-- ========== 12. Step 1: Install ========== -->
+<section>
+  <h3>Step 1 — 裝兩個工具<span class="tag">3 分鐘</span></h3>
+  <p>Windows（PowerShell）：</p>
+  <pre><code class="powershell">
+# Git：版本控制（剛剛那些約定的執行載體）
+winget install --id Git.Git --silent --accept-package-agreements
+
+# Claude Code：本場主角
+winget install --id Anthropic.ClaudeCode --silent --accept-package-agreements
+  </code></pre>
+  <p>macOS（Terminal）：</p>
+  <pre><code class="bash">
+brew install git                              # 版本控制
+brew install anthropic/anthropic/claude-code  # 本場主角
+  </code></pre>
+  <p class="muted">關閉視窗重開後驗證：<code>git --version</code> + <code>claude --version</code> 都有版本回應即成功</p>
+  <p class="highlight">→ 整場唯一需要手動敲指令的部分</p>
+  <aside class="notes">
+    Git 放第一行不是巧合——後續所有工作流（包含 Claude 自己）都依賴 git。
+  </aside>
+</section>
+
+<!-- ========== 12. Steps 2-4: Talk to Claude ========== -->
+<section>
+  <h3>Step 2-4 — 跟 Claude 對話<span class="tag">15 分鐘</span></h3>
+  <p>Clone repo → <code>cd</code> → <code>claude</code> → 然後：</p>
+  <table>
+    <tr><th>步驟</th><th>你說的話</th><th>Claude 做什麼</th></tr>
+    <tr>
+      <td>2</td>
+      <td>「幫我設定 ~/.claude/」</td>
+      <td>merge 安全規則進你的設定（17 deny + 17 ask）</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>「幫我建立 MyApp 產品 wiki」</td>
+      <td>互動問代號 / 路徑 → 建骨架 + 4 個起手 skill + git init</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>「跑電商範例 walkthrough」</td>
+      <td>建拋棄式 demo-wiki + 投放假資料 + 引導你跑 5 個步驟</td>
+    </tr>
+  </table>
+  <p class="muted">每個 skill 都會在做動作前先告訴你「我打算改這幾個檔」，你隨時打斷、調整、重來。</p>
+  <p class="muted" style="margin-top: 0.4em;"><span class="tag">團隊及營運流程</span> 寫完 code 跟 Claude 說「<code>/commit</code>」或「commit + push + 開 PR」：Claude 自動套上前頁的 commit 格式，符合團隊規範。</p>
+  <aside class="notes">
+    這就是 bootstrap 的核心：4 步驟、3 步是對話、不寫腳本。Commit 時 Claude 也依團隊規範。
+  </aside>
+</section>
+
+<!-- ========== 13. Coffee timeline ========== -->
+<section>
+  <h3>一杯咖啡時間長什麼樣？</h3>
+  <div class="ascii">
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│  T+0min   開 Terminal、winget/brew install ......................│
+│  T+3min   git clone bootstrap、cd 進來、claude .................│
+│  T+5min   「幫我設定 ~/.claude/」.............................. │
+│  T+7min   「幫我建 MyApp wiki」................................│
+│  T+10min  cd MyApp-wiki、開 Claude ............................│
+│  T+12min  把 4 份需求文件丟進 raw/ ............................│
+│  T+15min  「/ingest」 → 結構化 wiki 出現 ......................│
+│  T+18min  「/wiki-query 'XXX 系統怎麼運作？'」.................│
+│  T+20min  「規劃功能 Y」(自然語言) ............................│
+│  T+25min  「/spec-by-example Y」→ BDD 規格 ....................│
+│                                                                 │
+│                ☕ 你的咖啡還是熱的                              │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+  </div>
+  <aside class="notes">
+    這個 timeline 是真實的。我自己重跑了幾次計時。
+  </aside>
+</section>
+
+<!-- ========== 14. Section: 日常工作流 ========== -->
+<section class="section-divider">
+  <h1>Part 3</h1>
+  <h2>日常工作流</h2>
+  <p>—— bootstrap 設定完之後，每天都怎麼用？</p>
+</section>
+
+<!-- ========== 15. Three-layer architecture ========== -->
+<section>
+  <h3>三層架構：Raw / Wiki / Schema</h3>
+  <div class="ascii">
+┌──────────────────────────────────────────────────────────────────┐
+│ raw/ ........... 你投放的事實（PDF、Word、筆記，不可變）              │
+│                  ↓                                                │
+│                  /ingest        ←── 由 Claude 維護                 │
+│                  ↓                                                │
+│ wiki/ .......... LLM 結構化的編譯產物（會跟著 raw 更新）             │
+│                  ↑                                                │
+│                  /wiki-query    ←── 查詢 + 偵測 gap                │
+│                                                                  │
+│ CLAUDE.md ...... Schema（規則與品質規範，人類維護）                  │
+└──────────────────────────────────────────────────────────────────┘
+  </div>
+  <ul>
+    <li><span class="highlight">raw 不可變</span>：任何衝突以 raw 為準</li>
+    <li><span class="highlight">wiki 唯一寫入入口是 /ingest</span>：其他 skill 禁止直接寫</li>
+    <li><span class="highlight">Schema 演化緩慢</span>：CLAUDE.md 是規則本身，由 maintainer 改</li>
+  </ul>
+  <aside class="notes">
+    這套架構讓「文件複利成長」——每次 ingest 都讓 wiki 更完整、不會 entropy。
+  </aside>
+</section>
+
+<!-- ========== Personal workflow: daily-log + daily-report ========== -->
+<section>
+  <h3>個人工作流：累積 + 對外彙報<span class="tag">個人工作流</span></h3>
+  <p>兩個 skill 同名「daily」但目的不同——一個給未來的你，一個給主管：</p>
+  <table>
+    <tr>
+      <th><code>/daily-log</code></th>
+      <th><code>/daily-report</code></th>
+    </tr>
+    <tr>
+      <td><strong>對誰</strong>：未來的自己（細粒度）</td>
+      <td><strong>對誰</strong>：主管 / 團隊（粗粒度）</td>
+    </tr>
+    <tr>
+      <td><strong>寫到哪</strong>：<br><code>raw/daily/{user}/{yyyyMMdd}.md</code></td>
+      <td><strong>寫到哪</strong>：<br><code>raw/daily-reports/{user}/{yyyyMMdd}.md</code></td>
+    </tr>
+    <tr>
+      <td><strong>內容</strong>：bug 根因、踩到的坑、發現的系統隱含邏輯、知識庫更新</td>
+      <td><strong>結構</strong>：固定四區塊（日常工作 / 中長期 / 團隊及營運流程 / 自我成長）</td>
+    </tr>
+    <tr>
+      <td><strong>自動補齊</strong>：掃今日所有 session transcript，沒記錄到的補上</td>
+      <td><strong>冪等</strong>：同日再呼叫會合併新項目進既有區塊</td>
+    </tr>
+  </table>
+  <p class="muted" style="margin-top: 0.5em;">完整工作鏈：</p>
+  <div class="ascii">
+完成工作  →  /daily-log（個人細節累積）         ──┐
+                                                 ↓
+          →  /daily-report（主管視角彙報）       │
+                                                 ↓
+          →  /ingest（系統知識沉澱進 wiki）   ──┤
+                                                 ↓
+          →  /insights-retro（週末 retro 洞見） ──┘
+  </div>
+  <p class="highlight">→ 個人筆記不再寫了就忘；它是團隊 wiki 的種子</p>
+  <aside class="notes">
+    daily-log 適合愛記筆記的人；daily-report 適合公司要求每日匯報的人。兩者並行不衝突。
+    強調：daily-log 內容會被 /ingest 後續收割進 wiki，所以「寫日誌」不再是孤立行為。
+  </aside>
+</section>
+
+<!-- ========== SBE: Specification by Example ========== -->
+<section>
+  <h3>SBE — 寫 code 前先寫例子<span class="tag">需求理解優先</span></h3>
+  <p style="font-size: 0.85em;"><strong>Specification by Example</strong>：用具體例子釐清需求，避免「我以為你以為」</p>
+
+  <div class="two-col">
+    <div>
+      <h4 style="color: #ff6666;">沒 SBE 的痛</h4>
+      <ul>
+        <li>PM 寫 PRD、Dev 猜需求、QA 寫測試各自為政</li>
+        <li>實作到一半才發現「這 case 怎麼處理？」</li>
+        <li>需求/測試文件雙寫、雙腐爛</li>
+      </ul>
+    </div>
+    <div>
+      <h4 style="color: #66ff99;">有 SBE 後</h4>
+      <ul>
+        <li>需求轉成例子：<code>Given X, When Y, Then Z</code></li>
+        <li>例子 = PRD = 驗收條件 = 測試骨架</li>
+        <li>邊界條件先吵清楚再寫 code</li>
+      </ul>
+    </div>
+  </div>
+
+  <pre style="margin-top: 0.5em;"><code class="bash">你：/spec-by-example 紅利點數折抵
+
+Claude:
+  1. 讀 wiki/systems/、procedures/ 既有結帳知識
+  2. 互動釐清邊界（折抵上限？與折扣碼同用？退貨？）
+  3. 寫 Given/When/Then 規格到 specs/sbe/YYYY-MM-DD.md
+  4. 與 wiki 既有頁面建立雙向 [[wikilink]]</code></pre>
+
+  <p class="highlight" style="margin-top: 0.4em; font-size: 0.9em;">→ 規格 = 驗收條件 = 測試骨架 = 活文件，四合一</p>
+  <aside class="notes">
+    SBE 不是新概念（BDD 業界用很多年），但「寫例子」是高摩擦動作——以前要開會、寫表、跨團隊對齊；Claude 讓這件事變便宜，所以才開始真的普及。
+    強調 specs/sbe/ 跟 wiki/ 雙向 wikilink，是「規格 ↔ 知識」可逆查詢。
+  </aside>
+</section>
+
+<!-- ========== 16. Section: 進階 (bonus) ========== -->
+<section class="section-divider">
+  <h1>Part 4 <span class="tag tag-bonus">Bonus</span></h1>
+  <h2>進階主題</h2>
+  <p>—— 時間允許就講，沒時間請私下找我</p>
+</section>
+
+<!-- ========== 17. Claude Design / Remote Control ========== -->
+<section>
+  <h3>進階能力速覽</h3>
+  <div class="two-col">
+    <div>
+      <h4>Claude Design <span class="tag tag-bonus">bonus</span></h4>
+      <ul>
+        <li>用自然語言 + UI 規格，產出 React / HTML 元件</li>
+        <li>整合 frontend-design skill</li>
+        <li>適合：原型設計、designer ↔ engineer 溝通</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Remote Control <span class="tag tag-bonus">bonus</span></h4>
+      <ul>
+        <li>Claude 操作瀏覽器（playwright 整合）</li>
+        <li>能點按鈕、填表單、跑 E2E 測試</li>
+        <li>適合：自動化驗收、爬蟲、UI regression test</li>
+      </ul>
+    </div>
+  </div>
+  <p>本次只是 teaser，下次（或私下）我們可以深入 demo。</p>
+  <aside class="notes">
+    如果到這裡只剩 5 分鐘，這頁可以一句話帶過：「Claude 還能做設計、控制瀏覽器，下次再講」。
+  </aside>
+</section>
+
+<!-- ========== 18. Safety guardrails recap ========== -->
+<section>
+  <h3>安全護欄（再強調一次）</h3>
+  <table>
+    <tr><th>防線</th><th>位置</th><th>角色</th></tr>
+    <tr><td>1</td><td><code>~/.claude/settings.json</code></td><td>機械 deny / ask（17 + 17 條）</td></tr>
+    <tr><td>2</td><td>產品 wiki <code>CLAUDE.md</code> 安全守則</td><td>AI 主動自律</td></tr>
+    <tr><td>3</td><td>README「安全注意事項與護欄」</td><td>人類 SOP + 出事處置</td></tr>
+  </table>
+  <p class="big-quote highlight" style="margin-top: 0.5em;">機械擋 + AI 自律 + 人類把關，缺一不可。</p>
+  <p class="muted">勿信 AI 永不犯錯。三層並行是設計、不是冗餘。</p>
+  <aside class="notes">
+    這頁是「不能讓人聽完覺得 AI 萬能」的反例。一定要強調人類仍要把關。
+  </aside>
+</section>
+
+<!-- ========== 19. CTA + Q&A ========== -->
+<section class="lead">
+  <h2>5 分鐘試試看？</h2>
+  <p style="font-size: 1.2em; margin: 1em 0;">
+    <code>github.com/ds-hsu/claude-workflow-bootstrap</code>
+  </p>
+  <p>README 是完整使用手冊。Step 1 兩條指令，其餘對 Claude 講就好。</p>
+  <hr style="margin: 2em 0; opacity: 0.3;">
+  <p class="big-quote">Q &amp; A</p>
+  <p class="muted">問題 → drake666lord@gmail.com / Slack</p>
+</section>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4/plugin/notes/notes.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: 'c/t',
+    transition: 'slide',
+    margin: 0.08,
+    width: 1280,
+    height: 800,
+    plugins: [ RevealHighlight, RevealNotes ]
+  });
+</script>
+</body>
+</html>
